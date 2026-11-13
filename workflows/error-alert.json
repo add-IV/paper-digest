@@ -1,7 +1,6 @@
 {
   "id": "PaperDigestErr01",
   "name": "Paper Digest - Error Alert",
-  "active": false,
   "nodes": [
     {
       "parameters": {},
@@ -17,7 +16,6 @@
     {
       "parameters": {
         "authentication": "webhook",
-        "operation": "sendLegacy",
         "content": "=n8n workflow \"{{ $json.workflow.name }}\" failed\n{{ $json.execution.error.message }}\n{{ $json.execution.url }}",
         "options": {
           "flags": [
@@ -32,7 +30,14 @@
       "position": [
         240,
         0
-      ]
+      ],
+      "webhookId": "deabe4e5-354d-429f-98f1-6228f70b8652",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "Kkn1VkfNAtZd6aZ1",
+          "name": "Discord Webhook account"
+        }
+      }
     }
   ],
   "connections": {
@@ -49,7 +54,8 @@
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate"
   },
   "pinData": {}
 }

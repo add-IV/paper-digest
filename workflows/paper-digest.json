@@ -1,27 +1,7 @@
 {
   "id": "PaperDigestMain1",
   "name": "Paper Digest",
-  "active": false,
   "nodes": [
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "triggerAtHour": 7
-            }
-          ]
-        }
-      },
-      "id": "fe2a80d6-885f-488e-ac05-f9cbabee9ef0",
-      "name": "Every morning",
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        0,
-        0
-      ]
-    },
     {
       "parameters": {},
       "id": "6fc8b32d-6a57-4ac4-8942-229ab9c61464",
@@ -30,7 +10,7 @@
       "typeVersion": 1,
       "position": [
         0,
-        200
+        208
       ]
     },
     {
@@ -42,8 +22,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        220,
-        100
+        224,
+        96
       ]
     },
     {
@@ -62,7 +42,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        460,
+        464,
         0
       ],
       "retryOnFail": true,
@@ -79,7 +59,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        680,
+        688,
         0
       ]
     },
@@ -92,8 +72,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        460,
-        220
+        464,
+        224
       ]
     },
     {
@@ -113,8 +93,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        680,
-        220
+        688,
+        224
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -130,8 +110,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        900,
-        220
+        896,
+        224
       ]
     },
     {
@@ -142,7 +122,7 @@
       "typeVersion": 3,
       "position": [
         1120,
-        100
+        96
       ]
     },
     {
@@ -154,13 +134,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1340,
-        100
+        1344,
+        96
       ]
     },
     {
       "parameters": {
-        "operation": "removeItemsRepeatedInPreviousExecutions",
+        "operation": "removeItemsSeenInPreviousExecutions",
         "dedupeValue": "={{ $json.titleKey }}",
         "options": {}
       },
@@ -169,8 +149,8 @@
       "type": "n8n-nodes-base.removeDuplicates",
       "typeVersion": 2,
       "position": [
-        1560,
-        100
+        1568,
+        96
       ]
     },
     {
@@ -182,8 +162,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1780,
-        100
+        1776,
+        96
       ]
     },
     {
@@ -211,8 +191,7 @@
         "options": {
           "batching": {
             "batch": {
-              "batchSize": 5,
-              "batchInterval": 1000
+              "batchSize": 5
             }
           }
         }
@@ -222,12 +201,18 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2000,
-        100
+        1984,
+        -48
       ],
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "9YSUzEdBnEUSwGBh",
+          "name": "Header Auth account"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
@@ -239,8 +224,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2220,
-        100
+        2224,
+        96
       ]
     },
     {
@@ -252,14 +237,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2440,
-        100
+        2448,
+        96
       ]
     },
     {
       "parameters": {
         "authentication": "webhook",
-        "operation": "sendLegacy",
         "content": "={{ $json.text }}",
         "options": {
           "flags": [
@@ -272,23 +256,42 @@
       "type": "n8n-nodes-base.discord",
       "typeVersion": 2,
       "position": [
-        2660,
-        100
+        2656,
+        96
+      ],
+      "webhookId": "52512d82-596c-462d-a9b2-3b54c8cb7ee0",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "Kkn1VkfNAtZd6aZ1",
+          "name": "Discord Webhook account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                5
+              ],
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "fe2a80d6-885f-488e-ac05-f9cbabee9ef0",
+      "name": "Every Friday",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
       ]
     }
   ],
   "connections": {
-    "Every morning": {
-      "main": [
-        [
-          {
-            "node": "Config",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Run manually": {
       "main": [
         [
@@ -447,10 +450,52 @@
           }
         ]
       ]
+    },
+    "Send to Discord": {
+      "main": [
+        []
+      ]
+    },
+    "Every Friday": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "PaperDigestErr01"
   },
-  "pinData": {}
+  "pinData": {
+    "Every Friday": [
+      {
+        "json": {
+          "timestamp": "2026-11-13T08:33:00.366+01:00",
+          "Readable date": "November 13th 2026, 8:33:00 am",
+          "Readable time": "8:33:00 am",
+          "Day of week": "Friday",
+          "Year": "2026",
+          "Month": "November",
+          "Day of month": "13",
+          "Hour": "08",
+          "Minute": "33",
+          "Second": "00",
+          "Timezone": "Europe/Berlin (UTC+01:00)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  }
 }
