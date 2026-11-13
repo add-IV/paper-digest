@@ -1,0 +1,20 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    ports:
+      # Caddy proxies to this on the server
+      - "127.0.0.1:5678:5678"
+    env_file:
+      - .env
+    environment:
+      - GENERIC_TIMEZONE=Europe/Berlin
+      - TZ=Europe/Berlin
+      - N8N_RUNNERS_ENABLED=true
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # for import/export
+      - ./workflows:/home/node/workflows
+
+volumes:
+  n8n_data:

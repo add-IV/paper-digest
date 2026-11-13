@@ -1,0 +1,55 @@
+{
+  "id": "PaperDigestErr01",
+  "name": "Paper Digest - Error Alert",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c4ab90d4-d1cb-412c-aa43-65a5bf526b03",
+      "name": "On workflow error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "operation": "sendLegacy",
+        "content": "=n8n workflow \"{{ $json.workflow.name }}\" failed\n{{ $json.execution.error.message }}\n{{ $json.execution.url }}",
+        "options": {
+          "flags": [
+            "SUPPRESS_EMBEDS"
+          ]
+        }
+      },
+      "id": "7310f2ec-7bf2-428c-adce-000c6806dd67",
+      "name": "Alert on Discord",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "On workflow error": {
+      "main": [
+        [
+          {
+            "node": "Alert on Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

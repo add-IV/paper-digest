@@ -1,0 +1,456 @@
+{
+  "id": "PaperDigestMain1",
+  "name": "Paper Digest",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "fe2a80d6-885f-488e-ac05-f9cbabee9ef0",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "6fc8b32d-6a57-4ac4-8942-229ab9c61464",
+      "name": "Run manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===== Edit your settings here =====\nreturn [{\n  json: {\n    // arXiv API search_query syntax: https://info.arxiv.org/help/api/user-manual.html#query_details\n    arxivQuery: \"(cat:cs.CL OR cat:cs.LG OR cat:cs.AI OR cat:cs.SE) AND (abs:\\\"weight-space programming\\\" OR abs:\\\"weight space programming\\\" OR abs:\\\"knowledge editing\\\" OR abs:\\\"model editing\\\" OR abs:\\\"locate-then-edit\\\" OR abs:\\\"lifelong editing\\\" OR abs:\\\"sequential editing\\\" OR abs:\\\"intra-weight\\\" OR abs:\\\"weight differences\\\" OR abs:\\\"code knowledge\\\" OR (abs:\\\"code translation\\\" AND abs:\\\"LLM\\\"))\",\n    arxivMaxResults: 100,\n    // Semantic Scholar paperIds: new papers citing these are collected\n    keyPapers: [\n      {\n            \"id\": \"565be60314d70a665f6cf7c38e33540ecf7e3726\",\n            \"title\": \"Exploring Weight-Space Programming\"\n      },\n      {\n            \"id\": \"a749cbb0459e56049b360dfb38161f132ee421f1\",\n            \"title\": \"IWIBench\"\n      },\n      {\n            \"id\": \"3d92afe312072d0b1008c16cdeb81e52baa59894\",\n            \"title\": \"Xue et al. (TCPE / KECode)\"\n      },\n      {\n            \"id\": \"3a716fc45fe6233a29f58ad492e21d690d9054a0\",\n            \"title\": \"Gupta et al. 2024 (forgetting)\"\n      },\n      {\n            \"id\": \"c1d88b0d9499eb4b105af1253c6367e6c4af497b\",\n            \"title\": \"Interpreting Weight Differences\"\n      },\n      {\n            \"id\": \"0251bb95be75d472c8d5b873751615e7fe2feb1d\",\n            \"title\": \"Zhang et al. 2024 (KE survey)\"\n      },\n      {\n            \"id\": \"996445d847f06e99b0bd259345408a0cf1bce87e\",\n            \"title\": \"ROME\"\n      },\n      {\n            \"id\": \"2fe1ac0b09cc0f50eb83eef6c7c6b45ac8b12413\",\n            \"title\": \"MEMIT\"\n      }\n    ],\n    lookbackDays: 14,       // ignore papers published before this\n    minScore: 4,            // only papers scoring >= this go into the digest\n    model: 'claude-opus-5-5',\n    thesis: \"You help a master's student monitor new literature for their thesis.\\n\\nTHESIS\\nCan LLM-based weight-space editing (\\\"weight-space programming\\\") improve a\\nmodel's knowledge and behaviour more effectively and with less collateral\\ndamage than conventional knowledge-editing methods?\\n\\n- Weight-space programming: neural network weights are serialized as text and\\n  given to an LLM, which interprets and directly modifies them.\\n- Baselines: conventional knowledge editing such as ROME, MEMIT and MEND\\n  (causal tracing / locate-then-edit, mass editing, learned gradient-based\\n  editors), and their known failure modes: degrading effectiveness and\\n  gradual/catastrophic forgetting under sequential edits.\\n- Application: correcting code-generation errors in Java-to-D code\\n  translation, evaluated with KECode-style metrics (editing efficacy,\\n  collateral damage / locality, generalization to unseen examples).\\n- Experiments: small models first, then ~8B models with only selected layers\\n  or MLP weights exposed to the LLM.\\n\\nHIGHLY RELEVANT: weight-space programming / LLMs reading or editing weights;\\ninterpreting weight differences; gradient-free or intra-weight editing;\\nknowledge/model editing methods, benchmarks and evaluations; sequential or\\nlifelong editing and forgetting; editing code knowledge; code-to-code\\ntranslation with LLMs (especially low-resource target languages).\\nLESS RELEVANT: general fine-tuning, RAG, generic interpretability without an\\nediting angle, weight-space work in unrelated domains (e.g. medical imaging)\\nunless the method transfers.\\n\\nTASK\\nRate how relevant the given paper is to this thesis:\\n5 = directly addresses the research question or a core method/baseline\\n4 = closely related, likely worth reading\\n3 = same broader area, maybe useful for background\\n2 = tangentially related\\n1 = not relevant\\nGive the score and one short sentence explaining how the paper relates to\\nthe thesis (mention the specific connection, not a summary of the paper).\",\n  },\n}];\n"
+      },
+      "id": "1e39255b-1450-4527-9443-6afd23112f00",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://export.arxiv.org/api/query?search_query={{ encodeURIComponent($json.arxivQuery) }}&sortBy=submittedDate&sortOrder=descending&max_results={{ $json.arxivMaxResults }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "dac715bf-b034-4d3a-b5d0-77dbe32d513a",
+      "name": "arXiv search",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        460,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const xml = $input.first().json.data ?? '';\nconst cfg = $('Config').first().json;\nconst cutoff = Date.now() - cfg.lookbackDays * 864e5;\n\nconst decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"')\n  .replace(/&#39;/g, \"'\").replace(/&amp;/g, '&');\nconst clean = (s) => decode(s || '').replace(/\\s+/g, ' ').trim();\nconst get = (block, tag) => {\n  const m = block.match(new RegExp(`<${tag}[^>]*>([\\\\s\\\\S]*?)</${tag}>`));\n  return m ? clean(m[1]) : '';\n};\n\nconst out = [];\nfor (const m of xml.matchAll(/<entry>([\\s\\S]*?)<\\/entry>/g)) {\n  const e = m[1];\n  const arxivId = get(e, 'id').replace(/^.*\\/abs\\//, '').replace(/v\\d+$/, '');\n  const published = get(e, 'published');\n  if (!arxivId || new Date(published).getTime() < cutoff) continue;\n  out.push({\n    json: {\n      key: `arxiv:${arxivId.toLowerCase()}`,\n      arxivId,\n      title: get(e, 'title'),\n      abstract: get(e, 'summary'),\n      authors: [...e.matchAll(/<name>([\\s\\S]*?)<\\/name>/g)].map((a) => clean(a[1])),\n      published: published.slice(0, 10),\n      url: `https://arxiv.org/abs/${arxivId}`,\n      source: 'arXiv search',\n    },\n  });\n}\nreturn out;\n"
+      },
+      "id": "75e97851-2371-4dd2-b729-990f7dd04790",
+      "name": "Parse arXiv",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.first().json.keyPapers\n  .filter((p) => p.id)\n  .map((p) => ({ json: p }));\n"
+      },
+      "id": "d7b3cf00-db08-4e4b-9ce8-75b8deaecaa6",
+      "name": "Key papers",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.semanticscholar.org/graph/v1/paper/{{ $json.id }}/citations?fields=title,abstract,externalIds,publicationDate,url,authors&limit=50",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          }
+        }
+      },
+      "id": "5203f6ca-5ea7-446a-80ae-c6b0069ddb90",
+      "name": "Semantic Scholar citations",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        220
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst keyPapers = $('Key papers').all().map((i) => i.json);\nconst cutoff = Date.now() - cfg.lookbackDays * 864e5;\n\nconst out = [];\n$input.all().forEach((item, i) => {\n  const via = keyPapers[i]?.title ?? 'key paper';\n  for (const c of item.json.data ?? []) {\n    const p = c.citingPaper;\n    // skip papers without a date: they would flood the first run with old work\n    if (!p?.title || !p.publicationDate) continue;\n    if (new Date(p.publicationDate).getTime() < cutoff) continue;\n    const arxivId = p.externalIds?.ArXiv ?? null;\n    out.push({\n      json: {\n        key: arxivId ? `arxiv:${arxivId.toLowerCase()}` : `s2:${p.paperId}`,\n        arxivId,\n        title: p.title,\n        abstract: p.abstract ?? '',\n        authors: (p.authors ?? []).map((a) => a.name),\n        published: p.publicationDate,\n        url: arxivId ? `https://arxiv.org/abs/${arxivId}` : p.url,\n        source: `cites ${via}`,\n      },\n    });\n  }\n});\nreturn out;\n"
+      },
+      "id": "82e7af2d-868e-42ff-a120-80955a54520a",
+      "name": "Parse citations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        220
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "bdc54b2c-4511-41e4-8a94-d7720a05dcf1",
+      "name": "Merge sources",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1120,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge duplicates within this run (same arXiv id or same title)\nconst byKey = new Map();\nconst records = [];\nfor (const { json: p } of $input.all()) {\n  const titleKey = p.title.toLowerCase().replace(/[^a-z0-9]/g, '');\n  const existing = byKey.get(p.key) ?? byKey.get(titleKey);\n  if (existing) {\n    if (!existing.sources.includes(p.source)) existing.sources.push(p.source);\n    if (!existing.abstract && p.abstract) existing.abstract = p.abstract;\n    continue;\n  }\n  const { source, ...rest } = p;\n  const rec = { ...rest, titleKey, sources: [source] };\n  byKey.set(p.key, rec);\n  byKey.set(titleKey, rec);\n  records.push(rec);\n}\nreturn records.map((json) => ({ json }));\n"
+      },
+      "id": "d44291f7-3e8d-46e0-a5a5-913bb2614945",
+      "name": "Combine duplicates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsRepeatedInPreviousExecutions",
+        "dedupeValue": "={{ $json.titleKey }}",
+        "options": {}
+      },
+      "id": "d5eacc37-3f00-447f-b63e-3ba173e5edbe",
+      "name": "Skip already seen",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\n\nreturn $input.all().map(({ json: p }) => ({\n  json: {\n    paper: p,\n    body: {\n      model: cfg.model,\n      max_tokens: 2000,\n      // Thinking is always on for this model; low effort is enough for scoring\n      output_config: {\n        effort: 'low',\n        format: {\n          type: 'json_schema',\n          schema: {\n            type: 'object',\n            properties: {\n              score: { type: 'integer', description: 'Relevance 1-5' },\n              reason: { type: 'string' },\n            },\n            required: ['score', 'reason'],\n            additionalProperties: false,\n          },\n        },\n      },\n      // If the model declines, the API retries on a fallback model in the same call\n      fallbacks: 'default',\n      system: cfg.thesis,\n      messages: [{\n        role: 'user',\n        content: [\n          `Title: ${p.title}`,\n          `Authors: ${(p.authors ?? []).slice(0, 8).join(', ')}`,\n          `Found via: ${p.sources.join('; ')}`,\n          `Abstract: ${p.abstract || '(no abstract available - judge from the title)'}`,\n        ].join('\\n'),\n      }],\n    },\n  },\n}));\n"
+      },
+      "id": "777544b3-e803-4434-9d56-6db65f5721a0",
+      "name": "Build LLM request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "anthropic-beta",
+              "value": "server-side-fallback-2026-07-01"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 5,
+              "batchInterval": 1000
+            }
+          }
+        }
+      },
+      "id": "01fb28ed-82c0-4416-a020-169a0ec498f7",
+      "name": "Score with Claude",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        100
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const requests = $('Build LLM request').all();\n\nreturn $input.all().map((item, i) => {\n  const paper = requests[i].json.paper;\n  let score = null;\n  let reason = '';\n  try {\n    const res = item.json;\n    if (res.error) throw new Error(res.error.message ?? JSON.stringify(res.error));\n    if (res.stop_reason === 'refusal') throw new Error('model declined');\n    const text = (res.content ?? []).filter((b) => b.type === 'text').map((b) => b.text).join('');\n    const parsed = JSON.parse(text);\n    score = Math.max(1, Math.min(5, Number(parsed.score)));\n    reason = parsed.reason;\n  } catch (e) {\n    reason = `scoring failed: ${e.message}`;\n  }\n  return { json: { ...paper, score, reason } };\n});\n"
+      },
+      "id": "42581ce8-4811-4d5d-a889-39952676cf28",
+      "name": "Parse scores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst all = $input.all().map((i) => i.json);\nconst relevant = all.filter((p) => p.score >= cfg.minScore).sort((a, b) => b.score - a.score);\nconst failed = all.filter((p) => p.score === null);\n\nif (!relevant.length && !failed.length) return [];\n\n// escape Discord markdown in titles etc.\nconst md = (s) => String(s ?? '').replace(/([\\\\*_~`|\\[\\]>])/g, '\\\\$1');\nconst date = new Date().toISOString().slice(0, 10);\n\nlet header = `**Paper digest ${date}**\\n${relevant.length} relevant of ${all.length} new papers`;\nif (failed.length) header += `\\n${failed.length} could not be scored (${md(failed[0].reason)})`;\nheader += '\\n';\n\nconst blocks = relevant.map((p) =>\n  `\\n${'★'.repeat(p.score)} [${md(p.title)}](<${p.url}>)\\n` +\n  `*${md(p.reason)}*\\n` +\n  `-# ${md(p.sources.join(' · '))}\\n`);\n\n// Discord messages max out at 2000 chars\nconst messages = [];\nlet current = header;\nfor (const b of blocks) {\n  if ((current + b).length > 1900) { messages.push(current); current = ''; }\n  current += b;\n}\nmessages.push(current);\nreturn messages.map((text) => ({ json: { text } }));\n"
+      },
+      "id": "3647d09c-bad7-4175-882f-86d16e1ff160",
+      "name": "Build digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "operation": "sendLegacy",
+        "content": "={{ $json.text }}",
+        "options": {
+          "flags": [
+            "SUPPRESS_EMBEDS"
+          ]
+        }
+      },
+      "id": "dd899861-a0c6-417b-9e57-23a046f60f93",
+      "name": "Send to Discord",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2660,
+        100
+      ]
+    }
+  ],
+  "connections": {
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run manually": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "arXiv search",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Key papers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "arXiv search": {
+      "main": [
+        [
+          {
+            "node": "Parse arXiv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse arXiv": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Key papers": {
+      "main": [
+        [
+          {
+            "node": "Semantic Scholar citations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Semantic Scholar citations": {
+      "main": [
+        [
+          {
+            "node": "Parse citations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse citations": {
+      "main": [
+        [
+          {
+            "node": "Merge sources",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge sources": {
+      "main": [
+        [
+          {
+            "node": "Combine duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine duplicates": {
+      "main": [
+        [
+          {
+            "node": "Skip already seen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip already seen": {
+      "main": [
+        [
+          {
+            "node": "Build LLM request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM request": {
+      "main": [
+        [
+          {
+            "node": "Score with Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score with Claude": {
+      "main": [
+        [
+          {
+            "node": "Parse scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse scores": {
+      "main": [
+        [
+          {
+            "node": "Build digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build digest": {
+      "main": [
+        [
+          {
+            "node": "Send to Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
